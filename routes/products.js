@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const db = require("../db");
+const { jwtAuthMiddleWare } = require("../jwt");
 
 
 // add product to database (requires login)
@@ -12,8 +13,8 @@ const addProduct = (req, res) => {
 // view all available categories
 const showAllCategories = (req, res) => {
     try {
-        const showAllCategoriesQuery = "SELECT DISTINCT category FROM products";
-        db.query(showAllCategoriesQuery, (err, data) => {
+        const q = "SELECT DISTINCT category FROM products";
+        db.query(q, (err, data) => {
             if(err) return res.status(500).json({error: "internal server error"});
             if(data.rowCount === 0) return res.status(400).json({error: "no product category found"});
 
@@ -29,11 +30,12 @@ const showAllCategories = (req, res) => {
 }
 
 
-// view all products
-const showallProducts = (req, res) => {
+// view all products by category id
+const showProductsByCategoryId = (req, res) => {
     try {
-        const showAllProductsQuery = "SELECT * FROM products";
-        db.query(showAllProductsQuery, (err, data) => {
+        const catId = req.params.catid;
+        const q = "SELECT * FROM products  AS p INNER JOIN categories AS c ON p.category_id = c.category_id WHERE c.category_id = $1";
+        db.query(q, [catId], (err, data) => {
             if(err) return res.status(500).json({error: "internal server error"});
             if(data.rowCount === 0) return res.status(400).json({error: "no product found"});
 
@@ -52,8 +54,8 @@ const showProductById = (req, res) => {
         // get id of the product
         const prodId = req.params.id;
 
-        const showProductByIdQuery = "SELECT * FROM products WHERE p_id = $1";
-        db.query(showProductByIdQuery, [prodId], (err, data) => {
+        const q = "SELECT * FROM products  AS p INNER JOIN categories AS c ON p.category_id = c.category_id WHERE p.product_id = $1";
+        db.query(q, [prodId], (err, data) => {
             if(err) return res.status(500).json({error: "internal server error"});
             if(data.rowCount === 0) return res.status(400).json({error: "no product found"});
 
@@ -68,7 +70,7 @@ const showProductById = (req, res) => {
 
 router.post("/addproduct", addProduct);
 router.get("/getcategories", showAllCategories);
-router.get("/getproducts", showallProducts);
+router.get("/getproductsbycatid/:catid", showProductsByCategoryId);
 router.get("/getproduct/:id", showProductById);
 
 
