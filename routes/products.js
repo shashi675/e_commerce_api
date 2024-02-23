@@ -13,16 +13,12 @@ const addProduct = (req, res) => {
 // view all available categories
 const showAllCategories = (req, res) => {
     try {
-        const q = "SELECT DISTINCT category FROM products";
+        const q = "SELECT * FROM categories";
         db.query(q, (err, data) => {
             if(err) return res.status(500).json({error: "internal server error"});
             if(data.rowCount === 0) return res.status(400).json({error: "no product category found"});
 
-            let categories = [];
-            data.rows.forEach(element => {
-                categories.push(element.category);
-            });
-            res.status(200).json(categories);
+            res.status(200).json(data.rows);
         })
     } catch (err) {
         return res.status(500).json({error: "internal server error"});
