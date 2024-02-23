@@ -14,8 +14,8 @@ const showAllCategories = (req, res) => {
     try {
         const showAllCategoriesQuery = "SELECT DISTINCT category FROM products";
         db.query(showAllCategoriesQuery, (err, data) => {
-            if(err) return res.status(500).json({"message": "internal server error"});
-            if(data.rowCount === 0) return res.status(400).json({"message": "no product category found"});
+            if(err) return res.status(500).json({error: "internal server error"});
+            if(data.rowCount === 0) return res.status(400).json({error: "no product category found"});
 
             let categories = [];
             data.rows.forEach(element => {
@@ -24,7 +24,7 @@ const showAllCategories = (req, res) => {
             res.status(200).json(categories);
         })
     } catch (err) {
-        return res.status(500).json({"message": "internal server error"});
+        return res.status(500).json({error: "internal server error"});
     }
 }
 
@@ -34,13 +34,13 @@ const showallProducts = (req, res) => {
     try {
         const showAllProductsQuery = "SELECT * FROM products";
         db.query(showAllProductsQuery, (err, data) => {
-            if(err) return res.status(500).json({"message": "internal server error"});
-            if(data.rowCount === 0) return res.status(400).json({"message": "no product found"});
+            if(err) return res.status(500).json({error: "internal server error"});
+            if(data.rowCount === 0) return res.status(400).json({error: "no product found"});
 
             res.status(200).json(data.rows);
         })
     } catch (err) {
-        return res.status(500).json({"message": "internal server error"});
+        return res.status(500).json({error: "internal server error"});
     }
 }
 
@@ -54,13 +54,13 @@ const showProductById = (req, res) => {
 
         const showProductByIdQuery = "SELECT * FROM products WHERE p_id = $1";
         db.query(showProductByIdQuery, [prodId], (err, data) => {
-            if(err) return res.status(500).json({"message": "internal server error"});
-            if(data.rowCount === 0) return res.status(400).json({"message": "no product found"});
+            if(err) return res.status(500).json({error: "internal server error"});
+            if(data.rowCount === 0) return res.status(400).json({error: "no product found"});
 
             res.status(200).json(data.rows[0]);
         })
     } catch (err) {
-        return res.status(500).json({"message": "internal server error"});
+        return res.status(500).json({error: "internal server error"});
     }
 }
 
