@@ -24,7 +24,7 @@ const signup = (req, res) => {
             }
 
             // user does not exist, create one
-            const q = "INSERT INTO users (user_name, name, email_id, password, phone) values ($1, $2, $3, $4, $5)";
+            const q = "INSERT INTO users (user_name, name, email_id, pass, phone) values ($1, $2, $3, $4, $5)";
 
             db.query(q, [userName, name, email, password, phone], (err, data) => {
                 if(err) {
@@ -34,7 +34,7 @@ const signup = (req, res) => {
                 // user details inserted, create the jwt token
                 const payLoad = userName;
                 const token = generateToken(payLoad);
-                res.status(200).json({message: "Signup successfull", token: token});
+                res.status(200).json({message: "Signup successfull. Go to login"});
             })
         })
     }
@@ -57,14 +57,18 @@ const login = (req, res) => {
             if(data.rowCount === 0) return res.status(401).json({message: "user does not exist"});
 
             // user record found
-            const correctPass = data.rows[0].password;
+            const correctPass = data.rows[0].pass;
             if(correctPass != password) return res.status(401).json({error: "invalid login cridentials"});
 
             // password matches
             const payLoad = userName;
             const token = generateToken(payLoad);
 
-            res.status(200).json({message: "login successfull", token: token});
+            // remove the user password from the data to return
+            const { pass, ...remainingUserData } = data.rows[0];
+            remainingUserData["token"] = token;
+
+            res.status(200).json({ message: "Login successfull", userData: remainingUserData });
         })
     }
     catch(err) {
