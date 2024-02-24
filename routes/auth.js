@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const db = require("../db");
 const { generateToken } = require("../jwt");
+const bcrypt = require("bcryptjs");
 
 
 const signup = (req, res) => {
@@ -25,17 +26,23 @@ const signup = (req, res) => {
 
             // user does not exist, create one
             const q = "INSERT INTO users (user_name, name, email_id, pass, phone) values ($1, $2, $3, $4, $5) RETURNING *";
+            // hash the password
+            const salt = bcrypt.genSaltSync(10);
+            const hashedPassword = bcrypt.hashSync(password, salt);
 
-            db.query(q, [userName, name, email, password, phone], (err, data) => {
+            db.query(q, [userName, name, email, hashedPassword, phone], (err, data) => {
                 if(err) {
                     return res.status(500).json(err);
                 }
 
-                // user details inserted, create the jwt token
+                // password matches create token
                 const payLoad = userName;
                 const token = generateToken(payLoad);
-                data.rows[0]["token"] = token;
-                res.status(200).json({message: "Signup successfull.", userData: data.rows[0]});
+
+                // remove the user password from the data to return
+                const { pass, ...remainingUserData } = data.rows[0];
+                remainingUserData["token"] = token;
+                res.status(200).json({message: "Signup successfull.", userData: remainingUserData});
             })
         })
     }
@@ -57,9 +64,10 @@ const login = (req, res) => {
             if(err) return res.status(500).json({error: "internal serval error"});
             if(data.rowCount === 0) return res.status(401).json({message: "user does not exist"});
 
-            // user record found
-            const correctPass = data.rows[0].pass;
-            if(correctPass != password) return res.status(401).json({error: "invalid login cridentials"});
+            // match password
+            const correctPassword = data.rows[0].pass;
+            const checkPassword = bcrypt.compareSync(password, correctPassword);
+            if(!checkPassword) return res.status(400).json({error: "wrong credentials"});
 
             // password matches
             const payLoad = userName;
