@@ -70,7 +70,7 @@ const showAllCategories = (req, res) => {
 // view all products by category id
 const showProductsByCategoryId = (req, res) => {
     try {
-        const catId = req.params.catid;
+        const catId = req.params.catId;
         const q = "SELECT * FROM products  AS p INNER JOIN categories AS c ON p.category_id = c.category_id WHERE c.category_id = $1";
         db.query(q, [catId], (err, data) => {
             if(err) return res.status(500).json({error: "internal server error"});
@@ -89,7 +89,7 @@ const showProductsByCategoryId = (req, res) => {
 const showProductById = (req, res) => {
     try {
         // get id of the product
-        const prodId = req.params.id;
+        const prodId = req.params.productIdd;
 
         const q = "SELECT * FROM products  AS p INNER JOIN categories AS c ON p.category_id = c.category_id WHERE p.product_id = $1";
         db.query(q, [prodId], (err, data) => {
@@ -126,11 +126,11 @@ const updateProductQuantity = async (req, res) => {
 
 
 
-router.post("/addproduct", jwtAuthMiddleWare, addProduct);
-router.get("/getcategories", showAllCategories);
-router.get("/getproductsbycatid/:catid", showProductsByCategoryId);
-router.get("/getproduct/:id", showProductById);
-router.post("/updateprodquantity", jwtAuthMiddleWare, updateProductQuantity);
+router.post("/addProduct", jwtAuthMiddleWare, addProduct);
+router.get("/getCategories", showAllCategories);
+router.get("/getProductsByCatid/:catId", showProductsByCategoryId);
+router.get("/getProduct/:productId", showProductById);
+router.post("/updateProductQuantity", jwtAuthMiddleWare, updateProductQuantity);
 
 
 module.exports = router;
