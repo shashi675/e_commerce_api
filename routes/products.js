@@ -104,11 +104,33 @@ const showProductById = (req, res) => {
 }
 
 
+const updateProductQuantity = async (req, res) => {
+    try {
+        const { productId, quantity } = req.body;
+        if(!productId || !quantity) return res.status(206).json({message: "required productId and quantity"});
+
+        // check if product exists
+        const q1 = "SELECT title FROM products WHERE product_id = $1";
+        const productInfo = await db.query(q1, [productId]);
+        if(productInfo.rowCount === 0) return res.status(404).json({error: "product not found"});
+
+        // update quantity
+        const q2 = "UPDATE products SET quantity = $1 WHERE product_id = $2";
+        const updateInfo = await db.query(q2, [quantity ,productId]);
+        if(updateInfo.rowCount > 0)
+            return res.status(200).json({message: "quantity updated"});
+    } catch (err) {
+        res.status(500).json({error: "internal server error"});
+    }
+}
+
+
 
 router.post("/addproduct", jwtAuthMiddleWare, addProduct);
 router.get("/getcategories", showAllCategories);
 router.get("/getproductsbycatid/:catid", showProductsByCategoryId);
 router.get("/getproduct/:id", showProductById);
+router.post("/updateprodquantity", jwtAuthMiddleWare, updateProductQuantity);
 
 
 module.exports = router;
