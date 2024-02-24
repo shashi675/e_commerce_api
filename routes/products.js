@@ -5,8 +5,49 @@ const { jwtAuthMiddleWare } = require("../jwt");
 
 
 // add product to database (requires login)
-const addProduct = (req, res) => {
-    
+const addProduct = async (req, res) => {
+    try {
+        const { title, description, price, category, quantity } = req.body;
+
+        // check for title, price, category
+        if(!title || !price || !category || !quantity) return res.status(401).json({error: "required title, price, category and quantity"});
+
+        // check if the product has already been inserted
+        const q = "SELECT product_id FROM products WHERE title = $1";
+        const isProductInserted = await db.query(q, [title]);
+        if(isProductInserted.rowCount > 0) {
+            return res.status(401).json({error: "product with this title has already been inserted."});
+        }
+
+        // start a set of transactions using BEGIN, COMMIT AND ROLLBACK
+        db.query('BEGIN');
+
+        // check for the category if it exists
+        const q1 = "SELECT category_id from categories WHERE categories.category_name = $1";
+        const fetchedCategoryId = await db.query(q1, [category]);
+        let categoryId;
+
+        if(fetchedCategoryId.rowCount > 0) {
+            categoryId = fetchedCategoryId.rows[0].category_id;
+        }
+        else {
+            // insert new category name
+            const q2 = "INSERT INTO categories (category_name) VALUES ($1) RETURNING category_id";
+            const insertedCategoryId = await db.query(q2, [category]);
+            categoryId = insertedCategoryId.rows[0].category_id;
+        }
+
+        // insert data into products table
+        const q3 = "INSERT INTO products (title, description, price, category_id, quantity) VALUES ($1, $2, $3, $4, $5) RETURNING product_id";
+        const insertedProduct = await db.query(q3, [title, description, price, categoryId, quantity]);
+
+        db.query('COMMIT');
+
+        res.status(200).json({message: "product saved", productId: insertedProduct.rows[0].product_id, categoryId: categoryId});
+    } catch (err) {
+        db.query('ROLLBACK');
+        res.status(500).json({error: err.message});
+    }
 }
 
 
@@ -64,7 +105,7 @@ const showProductById = (req, res) => {
 
 
 
-router.post("/addproduct", addProduct);
+router.post("/addproduct", jwtAuthMiddleWare, addProduct);
 router.get("/getcategories", showAllCategories);
 router.get("/getproductsbycatid/:catid", showProductsByCategoryId);
 router.get("/getproduct/:id", showProductById);
