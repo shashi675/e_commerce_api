@@ -35,11 +35,17 @@ const addToCart = async (req, res) => {
 }
 
 
-const showCart = (req, res) => {
+const showCart = async (req, res) => {
     try {
+        const userName = req.userName;
         
+        // select cart items belonging to current user
+        const q1 = "SELECT p.product_id, title, description, price, cat.category_id, category_name, c.quantity FROM cart_items AS c INNER JOIN products AS p ON c.product_id = p.product_id INNER JOIN categories AS cat ON p.category_id = cat.category_id WHERE user_name = $1";
+
+        const cartItems = await db.query(q1, [userName]);
+        res.status(200).json({cartItems: cartItems.rows});
     } catch (err) {
-        return res.status(500).json({error: "internal server error"});
+        return res.status(500).json({error: err.message});
     }
 }
 
