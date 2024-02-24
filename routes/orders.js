@@ -80,7 +80,19 @@ const viewOrders = async (req, res) => {
 
 const viewOrderById = async (req, res) => {
     try {
+        const userName = req.userName;
+        const orderId = req.params.orderId;
+
+        // check if this orderId belongs to current user
+        const q1 = "SELECT user_name FROM order_summary WHERE order_id = $1";
+        const userDetail = await db.query(q1, [orderId]);
+        if(userDetail.rowCount === 0) return res.status(403).json({error: "no order with this id exist"});
+        if(userName != userDetail.rows[0].user_name) return res.status(403).json({error: "this order does not belong to you"});
         
+        // orderId belongs to current user
+        const q = "SELECT p.product_id, title, description, price, os.order_id, os.order_timing AS time, od.quantity FROM order_summary AS os INNER JOIN order_details AS od ON os.order_id = od.order_id INNER JOIN products AS p ON od.product_id = p.product_id WHERE os.user_name = $1 AND os.order_id = $2";
+        const orderDetail = db.query(q, [userName, orderId]);
+        return res.status(200).json((await orderDetail).rows);
     } catch (err) {
         res.status(500).json({error: err.message});
     }
@@ -90,7 +102,7 @@ const viewOrderById = async (req, res) => {
 
 router.post("/placeOrder", jwtAuthMiddleWare, placeOrder);
 router.get("/viewOrders", jwtAuthMiddleWare, viewOrders);
-router.put("/viewOrderById/:orderId", jwtAuthMiddleWare, viewOrderById);
+router.get("/viewOrderById/:orderId", jwtAuthMiddleWare, viewOrderById);
 
 
 module.exports = router;
