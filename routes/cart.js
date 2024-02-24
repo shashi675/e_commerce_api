@@ -86,9 +86,23 @@ const updateCart = async (req, res) => {
 
 const removeCartItemByProductId = async (req, res) => {
     try {
-        
+        const userName = req.userName;
+        const productId = req.params.productId;
+        if(!productId) return res.status(206).json({message: "required productId"});
+
+        // check for the item in cart
+        const q1 = "SELECT cart_id FROM cart_items WHERE user_name = $1 AND product_id = $2";
+        const cartItem = await db.query(q1, [userName, productId]);
+        // cart not containing the product
+        if(cartItem.rowCount === 0) return res.status(403).json({error: "item not found in cart"});
+
+        // delete item
+        const q2 = "DELETE FROM cart_items WHERE cart_id = $1";
+        const cartItemId = cartItem.rows[0].cart_id;
+        const deleteItem = await db.query(q2, [cartItemId]);
+        res.status(200).json({message: "product removed from cart"});
     } catch (err) {
-        res.status(500).json({error: "internal server error"});
+        res.status(500).json({error: err.message});
     }
 }
 
