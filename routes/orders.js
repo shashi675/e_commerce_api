@@ -67,7 +67,11 @@ const placeOrder = async (req, res) => {
 
 const viewOrders = async (req, res) => {
     try {
-        
+        const userName = req.userName;
+        const q = "SELECT p.product_id, title, description, price, os.order_id, os.order_timing, od.quantity FROM order_summary AS os INNER JOIN order_details AS od ON os.order_id = od.order_id INNER JOIN products AS p ON od.product_id = p.product_id WHERE user_name = $1";
+        const orderIdsData = await db.query(q, [userName]);
+        if(orderIdsData.rowCount === 0) return res.status(200).js({message: "you have not placed any order."});
+        return res.status(200).json(orderIdsData.rows);
     } catch (err) {
         return res.status(500).json({error: err.message});
     }
