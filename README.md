@@ -102,3 +102,6 @@ CREATE TABLE public.order_details
         ON DELETE NO ACTION
 )
 TABLESPACE pg_default;
+
+
+type "node index.js" in terminal to start the server.
