@@ -1,0 +1,555 @@
+tags:
+  - name: Authentication
+    description: User authentication
+  - name: Products
+    description: Store and view product details
+  - name: Cart
+    description: Cart Management
+  - name: Orders
+    description: Order Management
+
+
+paths:
+  /api/auth/signup:
+    post:
+      tags:
+        - Authentication
+      summary: Signup endpoint
+      description: Create a new user account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Signup'
+      responses:
+        '200':
+          description: 'Signup successfull.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserData'
+        '400':
+          description: required userName, email and password
+        '409':
+          description: user already registered
+
+  /api/auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: Login endpoint
+      description: User can login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Login'
+      responses:
+        '200':
+          description: 'Login successful'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserData'
+        '400':
+          description: required userName and password
+        '404':
+          description: user does not exist
+
+  /api/products/addProduct:
+    post:
+      tags:
+        - Products
+      summary: Add product endpoint
+      description: Add a product to the store. (token required, provide in the form of (Bearer yourToken)).
+      security:
+        - BearerAuth: [Bearer ]  # This indicates that the BearerAuth security definition is required
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductToInsert'
+      responses:
+        '200':
+          description: product saved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductInserted'
+        '400':
+          description: required title, price, category and quantity
+        '409':
+          description: product with this title has already been inserted.
+
+  /api/products/getCategories:
+    get:
+      tags:
+        - Products
+      summary: Show categories endpoint
+      description: Display all available categories
+      responses:
+        '200':
+          description: All available categories dispalyed.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Category'
+        '404':
+          description: no product category found.
+
+  /api/products/getProductsByCatid/{catId}:
+    get:
+      tags:
+        - Products
+      summary: Show products by category id endpoint
+      description: Display all available products by category id.
+      parameters:
+        - name: catId
+          in: path
+          description: ID of category to display products
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Products found with category id.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProductData'
+        '404':
+          description: no product found
+
+  /api/products/getProduct/{productId}:
+    get:
+      tags:
+        - Products
+      summary: Show product by product id endpoint
+      description: Display single product by its product id.
+      parameters:
+        - name: productId
+          in: path
+          description: ID of product to display its detail.
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Product found with product id.
+          content:
+            application/json:
+              schema:
+                  $ref: '#/components/schemas/ProductData'
+        '400':
+          description: no product found
+
+  /api/products/updateProductQuantity:
+    put:
+      tags:
+        - Products
+      summary: Update product quantity endpoint
+      description: Update quantity of a single product by its product id. (token required, provide in the form of (Bearer yourToken)).
+      security:
+        - BearerAuth: [Bearer ]  # This indicates that the BearerAuth security definition is required
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateQuantity'
+      responses:
+        '200':
+          description: quantity updated
+        '400':
+          description: required productId and quantity
+        '404':
+          description: product not found
+
+  /api/cart/addToCart:
+    post:
+      tags:
+        - Cart
+      summary: Add to cart endpoint
+      description: Add products to cart with thier quantities. (token required, provide in the form of (Bearer yourToken)).
+      security:
+        - BearerAuth: [Bearer ]  # This indicates that the BearerAuth security definition is required
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateQuantity'
+      responses:
+        '200':
+          description: item added to cart
+        '400':
+          description: required productId and quantity
+        '404':
+          description: no product found
+        '405':
+          description: product available in less quantity
+        '409':
+          description: item already inserted. Update the quantity
+
+  /api/cart/viewCart:
+    get:
+      tags:
+        - Cart
+      summary: View cart endpoint
+      description: View cart items of the logged in user. (token required, provide in the form of (Bearer yourToken)).
+      security:
+        - BearerAuth: [Bearer ]  # This indicates that the BearerAuth security definition is required
+      responses:
+        '200':
+          description: Products found in your cart.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProductData'
+
+  /api/cart/updateCart:
+    put:
+      tags:
+        - Cart
+      summary: Update cart endpoint
+      description: Update quantities of the products of your cart. (token required, provide in the form of (Bearer yourToken)).
+      security:
+        - BearerAuth: [Bearer ]  # This indicates that the BearerAuth security definition is required
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateQuantity'
+      responses:
+        '200':
+          description: item quantity updated successfully
+        '400':
+          description: required productId and quantity
+        '404':
+          description: no product found in cart
+        '409':
+          description: product available in less quantity
+
+  /api/cart/removeCartPoduct/{productId}:
+    delete:
+      tags:
+        - Cart
+      summary: Delete product form cart endpoint
+      description: Delete product from your cart. (token required, provide in the form of (Bearer yourToken)).
+      parameters:
+        - name: productId
+          in: path
+          description: ID of product to remove from your cart.
+          required: true
+          schema:
+            type: integer
+      security:
+        - BearerAuth: [Bearer ]  # This indicates that the BearerAuth security definition is required
+      responses:
+        '200':
+          description: product removed from cart
+        '400':
+          description: required productId
+        '404':
+          description: item not found in cart
+
+  /api/orders/placeOrder:
+    post:
+      tags:
+        - Orders
+      summary: Place order endpoint
+      description: Creates an order of products for current user which are in the cart. (token required, provide in the form of (Bearer yourToken)).
+      security:
+        - BearerAuth: [Bearer ]  # This indicates that the BearerAuth security definition is required
+      responses:
+        '200':
+          description: order placed successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderCreated'
+        '404':
+          description: your cart is empty
+        '409':
+          description: your cart has more quantity than available quantities
+
+  /api/orders/viewOrders:
+    get:
+      tags:
+        - Orders
+      summary: View orders endpoint
+      description: View order history of a user. (token required, provide in the form of (Bearer yourToken)).
+      security:
+        - BearerAuth: [Bearer ]  # This indicates that the BearerAuth security definition is required
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OrderData'
+        '400':
+          description: you have not placed any order.
+
+  /api/orders/viewOrderById/{orderId}:
+    get:
+      tags:
+        - Orders
+      summary: View order by order id endpoint
+      description: View order history of a particular order by order id. (token required, provide in the form of (Bearer yourToken)).
+      parameters:
+        - name: orderId
+          in: path
+          description: ID of order to view the order.
+          required: true
+          schema:
+            type: integer
+      security:
+        - BearerAuth: [Bearer ]  # This indicates that the BearerAuth security definition is required
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OrderData'
+        '404':
+          description: no order with this id exist
+        '401':
+          description: this order does not belong to you
+ 
+ 
+          
+components:
+  schemas:
+    Signup:
+      type: object
+      required:
+        - userName
+        - email
+        - password
+      properties:
+        userName:
+          type: string
+          example: 'shashi1'
+        email:
+          type: string
+          format: email
+          example: shashi1@gmail.com
+        password:
+          type: string
+          example: '1234567'
+        name:
+          type: string
+          example: 'shashi'
+        phone:
+          type: integer
+          example: 1234567890
+      xml:
+        name: order
+
+    Login:
+      type: object
+      required:
+        - userName
+        - password
+      properties:
+        userName:
+          type: string
+          example: 'shashi1'
+        password:
+          type: string
+          example: '1234567'
+      xml:
+        name: Login
+
+    User:
+      type: object
+      properties:
+        user_name:
+          type: string
+          example: 'shashi1'
+        email_id:
+          type: string
+          format: email
+          example: shashi1@gmail.com
+        name:
+          type: string
+          example: 'shashi'
+        phone:
+          type: integer
+          example: 1234567890
+        token:
+          type: string
+          example: 'eyJhbGciOiJIUzI1NiJ9.c2hhc2hpNA.-3LYlcRkn6zMp-7jKSZYIemU94tIA6yd8Cs_EPgFync'
+      xml:
+        name: User
+
+    UserData:
+      type: object
+      properties:
+        message:
+          type: string
+          example: 'Signup/login successful'
+        userData:
+          $ref: '#/components/schemas/User'
+      xml:
+        name: UserData
+
+    Category:
+      type: object
+      required:
+        - categoryName
+      properties:
+        category_id:
+          type: integer
+          example: 1
+        category_name:
+          type: string
+          example: 'sports'
+      xml:
+        name: Category
+
+    ProductToInsert:
+      type: object
+      required:
+        - title
+        - price
+        - category
+        - quantity
+      properties:
+        title:
+          type: string
+          example: 'football'
+        description:
+          type: string
+          example: 'this is a football'
+        price:
+          type: number
+          format: double
+          example: 100
+        category:
+          type: string
+          example: 'sports'
+        quantity:
+          type: integer
+          example: 10
+      xml:
+        name: ProductToInsert
+
+    ProductInserted:
+      type: object
+      properties:
+        message:
+          type: string
+          example: 'product saved'
+        productId:
+          type: integer
+          example: 1
+        categoryId:
+          type: integer
+          example: 1
+      xml:
+        name: ProductInserted
+
+    ProductData:
+      type: object
+      properties:
+        product_id:
+          type: integer
+          example: 1
+        title:
+          type: string
+          example: football
+        description:
+          type: string
+          example: this is football
+        price:
+          type: number
+          format: double
+          example: 100
+        category_id:
+          type: integer
+          example: 1
+        quantity:
+          type: integer
+          example: 10
+        category_name:
+          type: string
+          example: 'sports'        
+      xml:
+        name: ProductData
+
+    UpdateQuantity:
+      type: object
+      required:
+        - productId
+        - quantity
+      properties:
+        productId:
+          type: integer
+          example: 1
+        quantity:
+          type: integer
+          example: 10
+      xml:
+        name: UpdateQuantity
+
+    OrderCreated:
+      type: object
+      properties:
+        message:
+          type: string
+          example: 'order placed successfully.'
+        orderId:
+          type: integer
+          example: 1
+      xml:
+        name: OrderCreated
+
+    OrderData:
+      type: object
+      properties:
+        product_id:
+          type: integer
+          example: 1
+        title:
+          type: string
+          example: football
+        description:
+          type: string
+          example: this is football
+        price:
+          type: number
+          format: double
+          example: 100
+        order_id:
+          type: integer
+          example: 1
+        order_timing:
+          type: string
+          example: '2024-02-24T16:03:13.575Z'
+        quantity:
+          type: integer
+          example: 10        
+      xml:
+        name: OrderData
+
+  securitySchemes:
+    BearerAuth:
+      type: apiKey
+      in: header
+      scheme: bearer
+      name: Authorization
