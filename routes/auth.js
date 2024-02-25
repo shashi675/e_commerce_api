@@ -10,7 +10,7 @@ const signup = (req, res) => {
 
         // check for userName, email, password
         const { userName, name, email, password, phone } = req.body;
-        if(!userName || !email || !password) return res.status(500).json({error: "required userName, email and password"});
+        if(!userName || !email || !password) return res.status(400).json({error: "required userName, email and password"});
 
         // check if user already exists
         const q = "SELECT * FROM users WHERE user_name = $1";
@@ -21,7 +21,7 @@ const signup = (req, res) => {
             }
             if(data.rows.length > 0) {
                 // user already exists
-                return res.status(401).json({message: "user already registered"})
+                return res.status(409).json({message: "user already registered"})
             }
 
             // user does not exist, create one
@@ -56,13 +56,13 @@ const login = (req, res) => {
     try {
         const { userName, password } = req.body;
 
-        if(!userName || !password) return res.status(500).json({error: "required userName and password"});
+        if(!userName || !password) return res.status(400).json({error: "required userName and password"});
     
         // search for the user
         const q = "SELECT * FROM users WHERE user_name = $1";
         db.query(q, [userName], (err, data) => {
             if(err) return res.status(500).json({error: "internal serval error"});
-            if(data.rowCount === 0) return res.status(401).json({message: "user does not exist"});
+            if(data.rowCount === 0) return res.status(404).json({message: "user does not exist"});
 
             // match password
             const correctPassword = data.rows[0].pass;

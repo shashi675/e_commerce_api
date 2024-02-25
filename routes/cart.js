@@ -8,19 +8,19 @@ const addToCart = async (req, res) => {
     try {
         const userName = req.userName;
         const { productId, quantity } = req.body;
-        if( !productId || !quantity) return res.status(206).json({message: "required productId and quantity"});
+        if( !productId || !quantity) return res.status(400).json({message: "required productId and quantity"});
 
         // check if product already inserted
         const q1 = "SELECT * FROM cart_items WHERE user_name = $1 AND product_id = $2";
         const fetchedData = await db.query(q1, [userName,  productId]);
-        if(fetchedData.rowCount > 0) return res.status(405).json({error: "item already inserted. Update the quantity"});
+        if(fetchedData.rowCount > 0) return res.status(409).json({error: "item already inserted. Update the quantity"});
 
 
         // check for the product available
         const q2 = "SELECT quantity FROM products WHERE product_id = $1";
         const availableItem = await db.query(q2, [productId]);
         // check if product exist
-        if(availableItem.rowCount === 0) return res.status(403).json({error: "no product found"});
+        if(availableItem.rowCount === 0) return res.status(404).json({error: "no product found"});
         // check for quantity
         if(availableItem.rows[0].quantity < quantity) return res.status(405).json({error: "product available in less quantity", availableQuantity: availableItem.rows[0].quantity});
         
@@ -55,21 +55,21 @@ const updateCart = async (req, res) => {
         const userName = req.userName;
         const { productId, quantity } = req.body;
 
-        if(!productId || !quantity) return res.status(206).json({message: "required productId and quantity"});
+        if(!productId || !quantity) return res.status(400).json({message: "required productId and quantity"});
 
         // check for the product availability
         const q1 = "SELECT quantity FROM products WHERE product_id = $1";
         const availableItem = await db.query(q1, [productId]);
         // check if product exist
-        if(availableItem.rowCount === 0) return res.status(403).json({error: "no product found"});
+        if(availableItem.rowCount === 0) return res.status(404).json({error: "no product found in cart"});
         // check for quantity
-        if(availableItem.rows[0].quantity < quantity) return res.status(405).json({error: "product available in less quantity", availableQuantity: availableItem.rows[0].quantity});
+        if(availableItem.rows[0].quantity < quantity) return res.status(409).json({error: "product available in less quantity", availableQuantity: availableItem.rows[0].quantity});
 
         // check for the product in cart_items table
         const q2 = "SELECT cart_id FROM cart_items WHERE user_name = $1 AND product_id = $2";
         const cartItem = await db.query(q2, [userName, productId]);
         // product not available
-        if(cartItem.rowCount === 0) return res.status(403).json({error: "Item not found in cart. Please add first."});
+        if(cartItem.rowCount === 0) return res.status(404).json({error: "no product found in cart"});
 
         // update the quantity of product
         const q3 = "UPDATE cart_items SET quantity = $1 WHERE cart_id = $2";
@@ -88,13 +88,13 @@ const removeCartItemByProductId = async (req, res) => {
     try {
         const userName = req.userName;
         const productId = req.params.productId;
-        if(!productId) return res.status(206).json({message: "required productId"});
+        if(!productId) return res.status(400).json({message: "required productId"});
 
         // check for the item in cart
         const q1 = "SELECT cart_id FROM cart_items WHERE user_name = $1 AND product_id = $2";
         const cartItem = await db.query(q1, [userName, productId]);
         // cart not containing the product
-        if(cartItem.rowCount === 0) return res.status(403).json({error: "item not found in cart"});
+        if(cartItem.rowCount === 0) return res.status(404).json({error: "item not found in cart"});
 
         // delete item
         const q2 = "DELETE FROM cart_items WHERE cart_id = $1";
